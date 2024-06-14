@@ -4,6 +4,9 @@ import cors from "cors";
 import helmet from "helmet";
 import { userRouter } from "./users/users.routes";
 import { watchRouter } from "./watches/watch.routes";
+import { adminRouter } from "./admin/admin.routes";
+import { ADMIN } from "./middleware/admin";
+import { AUTHENTICATE } from "./middleware/authenticate";
 
 dotevnv.config();
 
@@ -20,8 +23,9 @@ app.use(express.urlencoded({extended : true}));
 app.use(cors());
 app.use(helmet());
 
-app.use('/', userRouter);
-app.use('/', watchRouter);
+app.use('/user', userRouter);
+app.use('/watches', AUTHENTICATE, watchRouter);
+app.use('/admin', ADMIN, adminRouter);
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);

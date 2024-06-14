@@ -24,20 +24,20 @@ function saveWatches() {
 }
 
 
-export const findAll = async (ownerId : string) : Promise<UnitWatch[]> => Object.values(watches).filter(watch => watch.ownerId === ownerId)
+export const findAllByOwner = async (ownerId : string) : Promise<UnitWatch[]> => Object.values(watches).filter(watch => watch.ownerId === ownerId);
 
-export const findOne = async (id : string) : Promise<UnitWatch> => watches[id]
+export const findOneByOwner = async (id : string, ownerId: string) : Promise<UnitWatch> => Object.values(watches).find(watch => (watch.ownerId === ownerId && watch.id === id));
 
-export const findAllCurrentWearing = async (ownerId: string) : Promise<UnitWatch[]> => Object.values(watches).filter(watch => (watch.ownerId === ownerId && watch.isCurrentlyWearing));
+export const findAllCurrentWearingByOwner = async (ownerId: string) : Promise<UnitWatch[]> => Object.values(watches).filter(watch => (watch.ownerId === ownerId && watch.isCurrentlyWearing));
 
 export const create = async (watchInfo : Watch) : Promise<null | UnitWatch> => {
 
     let id = random()
-    let watch = await findOne(id)
+    let watch = await findOneByOwner(id, watchInfo.ownerId)
 
     while (watch) {
         id = random ()
-        await findOne(id)
+        await findOneByOwner(id, watchInfo.ownerId)
     }
 
     watches[id] = {
@@ -52,7 +52,7 @@ export const create = async (watchInfo : Watch) : Promise<null | UnitWatch> => {
 
 export const update = async (id : string, updateValues : Watch) : Promise<UnitWatch | null> => {
 
-    const watch = await findOne(id) 
+    const watch = await findOneByOwner(id, updateValues.ownerId) 
 
     if (!watch) {
         return null
@@ -68,9 +68,9 @@ export const update = async (id : string, updateValues : Watch) : Promise<UnitWa
     return watches[id]
 }
 
-export const remove = async (id : string) : Promise<null | void> => {
+export const remove = async (id : string, ownerId: string) : Promise<null | void> => {
 
-    const watch = await findOne(id)
+    const watch = await findOneByOwner(id, ownerId)
 
     if (!watch) {
         return null

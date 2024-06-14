@@ -9,6 +9,7 @@ declare global {
 
     export interface RequestUser {
         id: string;
+        username: string;
         email: string;
         role: ROLES;
         lastLogin: Date;

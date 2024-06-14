@@ -12,6 +12,9 @@ const ADMIN = (req : Request, res : Response, next: NextFunction) => {
     
     try {
         const decoded: any = JWT.verify(token, process.env.JWT_SECRET as string);
+        if (decoded.role !== "ADMIN") {
+            return res.status(401).json({ message: 'Admin level permission is required for this request.' });
+        }
         req.user = decoded;
         next();
     } catch (err) {
