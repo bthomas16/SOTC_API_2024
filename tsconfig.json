@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+      /* Language and Environment */
+      "target": "es2016" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
+      /* Modules */
+      "module": "commonjs" /* Specify what module code is generated. */,
+      "rootDir": "./src",
+      "outDir": "./dist",
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
+
+      /* Type Checking */
+      "strict": false,
+      "skipLibCheck": false /* Skip type checking all .d.ts files. */
+  },
+  "include": [
+      "src/**/*.ts"
+  ],
+  "exclude": [
+      "node_modules"
+  ],
+  "files":["src/types/express/index.d.ts"]
+}
