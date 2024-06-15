@@ -4,6 +4,7 @@ import {StatusCodes} from "http-status-codes"
 import * as JWT from "jsonwebtoken";
 import * as database from "./user.database"
 import { AUTHENTICATE } from "../middleware/authenticate";
+import { ROLES, UserClass } from "./user.class";
 
 export const userRouter = express.Router();
 
@@ -27,8 +28,7 @@ userRouter.post("/register", async (req : Request, res : Response) => {
             return res.status(StatusCodes.BAD_REQUEST).json({error : `This username has already been registered, ${username}`});
         }
 
-        const newUser = await database.create(req.body);
-        delete newUser.password;
+        const newUser = await database.create(new UserClass(req.body));
 
         return res.status(StatusCodes.CREATED).json({newUser})
 
@@ -51,7 +51,7 @@ userRouter.post("/login", async (req : Request, res : Response) => {
         if (!user) {
             return res.status(StatusCodes.NOT_FOUND).json({error : "No user exists with the email provided.."})
         }
-        console.log('herere', user)
+        console.log('herere', user, password)
 
         const comparePassword = await database.comparePassword(email, password)
 
@@ -88,6 +88,7 @@ userRouter.post("/login", async (req : Request, res : Response) => {
         });
 
     } catch (error) {
+        console.log('good sire', error)
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({error})
     }
 })
@@ -132,6 +133,10 @@ userRouter.put('/', AUTHENTICATE, async (req : Request, res : Response) => {
         const matcherUsername = await database.findOneByUsername_NotId(req.user.id, req.user.username);
         if (matcherUsername) {
             return res.status(401).json({error : `Username is not available, ${req.user.username}`});
+        }
+
+        if (req.user.role == ROLES.USER) {
+            req.body.role = ROLES.USER;
         }
 
         const updateUser = await database.update((req.user.id), req.body)

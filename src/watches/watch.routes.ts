@@ -3,13 +3,14 @@ import * as database from "./watch.database"
 import {StatusCodes} from "http-status-codes"
 import { onlyUnique } from "./watch.helpers";
 import { UnitWatch } from "./watch.interface";
+import { WatchClass } from "./watch.class";
 
 export const watchRouter = express.Router()
 
 // Get all watches for Owner ID (token making request)
 watchRouter.get('/', async (req : Request, res : Response) => {
     try {
-       const allWatches = await database.findAllByOwner(req.user.id)
+       const allWatches = await (await database.findAllByOwner(req.user.id)).sort((a,b) => a.sortOrder - b.sortOrder);
 
        if (!allWatches) {
         return res.status(StatusCodes.NOT_FOUND).json({error : `No watches found!`})
@@ -24,13 +25,14 @@ watchRouter.get('/', async (req : Request, res : Response) => {
 // Get Current Watch Being Worn
 watchRouter.get("/wearing", async (req : Request, res : Response) => {
     try {
-        const watch = await database.findAllCurrentWearingByOwner(req.user.id)
+        const watch = await database.findAllCurrentWearingByOwner(req.user.id);
+        console.log('currently wearing', watch)
 
         if (!watch[0]) {
             return res.status(StatusCodes.NOT_FOUND).json({error : "No Watch is currently being worn"})
         }
 
-        return res.status(StatusCodes.OK).json({watch: watch[0]})
+        return res.status(StatusCodes.OK).json({watch: watch})
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({error})
     }
@@ -123,8 +125,16 @@ watchRouter.post("/", async (req : Request, res : Response) => {
         if (!name || !brand || !image) {
             return res.status(StatusCodes.BAD_REQUEST).json({error : `Please provide all the required parameters...`})
         }
-        const newWatch = await database.create({...req.body, ownerId: req.user.id})
-        return res.status(StatusCodes.CREATED).json({newWatch})
+
+        const watchCount = await database.findAllByOwner(req.user.id);
+        let sortOrder = 0;
+        if (watchCount.length >= 1) {
+            sortOrder = watchCount.length;
+        }
+
+        const newWatch = await database.create(new WatchClass({...req.body, ownerId: req.user.id, sortOrder}));
+        
+        return res.status(StatusCodes.CREATED).json(newWatch)
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({error})
     }
@@ -135,7 +145,7 @@ watchRouter.put("/:id", async (req : Request, res : Response) => {
     try {
         const watchId = req.params.id
 
-        const newWatch = req.body
+        const newWatch = req.body;
 
         const findWatch = await database.findOneByOwner(watchId, req.user.id)
 
@@ -143,9 +153,11 @@ watchRouter.put("/:id", async (req : Request, res : Response) => {
             return res.status(StatusCodes.NOT_FOUND).json({error : `Watch does not exist..`})
         }
 
-        const updateWatch = await database.update(watchId, {...newWatch, ownerId: req.user.id})
+        newWatch.ownerId = req.user.id
 
-        return res.status(StatusCodes.OK).json({updateWatch})
+        const updateWatch = await database.update(watchId, {...findWatch, ...newWatch})
+
+        return res.status(StatusCodes.OK).json(updateWatch)
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({error})
     }
@@ -161,14 +173,21 @@ watchRouter.put("/wearing/:id", async (req : Request, res : Response) => {
             return res.status(StatusCodes.NOT_FOUND).json({error : `Watch does not exist..`})
         }
 
-        const otherWatchesCurrentWearing = await database.findAllCurrentWearingByOwner(req.user.id);
+        const otherWatchesCurrentWearing = await database.findAllCurrentWearingByOwner_NotId(req.user.id, watchId);
         otherWatchesCurrentWearing.forEach(async (watch) => {
-            await database.update(watchId, {...watch, isCurrentlyWearing: false});
+            watch.isCurrentlyWearing = false;
+            console.log('other watches wearing', watch)
+            let updated = await database.update(watchId, watch);
+            console.log('updated', updated)
         })
 
-        const updateWatch = await database.update(watchId, {...findWatch, isCurrentlyWearing: !findWatch.isCurrentlyWearing});
+        findWatch.isCurrentlyWearing = !findWatch.isCurrentlyWearing;
 
-        return res.status(StatusCodes.OK).json({updateWatch})
+        const updateWatch = await database.update(watchId, findWatch);
+        console.log('updated the 2nd', updateWatch)
+
+
+        return res.status(StatusCodes.OK).json(updateWatch)
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({error})
     }

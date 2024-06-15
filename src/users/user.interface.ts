@@ -1,14 +1,11 @@
-export enum ROLES {
-    ADMIN = "ADMIN",
-    USER = "USER"
-}
+import { ROLES } from "./user.class"
 
 export interface User {
     username : string,
     email : string,
     password : string,
     role: ROLES,
-    lastLogin: number,
+    lastLogin?: number,
     isEnabled: boolean,
     createdAt: number
 }

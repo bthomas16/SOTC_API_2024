@@ -1,6 +1,7 @@
 import { Watch, Watches, UnitWatch } from "./watch.interface";
 import { v4 as random } from "uuid";
 import fs from "fs";
+import { WatchClass } from "./watch.class";
 
 let watches: Watches = loadWatches();
 
@@ -30,7 +31,9 @@ export const findOneByOwner = async (id : string, ownerId: string) : Promise<Uni
 
 export const findAllCurrentWearingByOwner = async (ownerId: string) : Promise<UnitWatch[]> => Object.values(watches).filter(watch => (watch.ownerId === ownerId && watch.isCurrentlyWearing));
 
-export const create = async (watchInfo : Watch) : Promise<null | UnitWatch> => {
+export const findAllCurrentWearingByOwner_NotId = async (ownerId: string, watchId: string) : Promise<UnitWatch[]> => Object.values(watches).filter(watch => (watch.ownerId === ownerId && watch.isCurrentlyWearing && watch.id !== watchId));
+
+export const create = async (watchInfo : WatchClass) : Promise<null | UnitWatch> => {
 
     let id = random()
     let watch = await findOneByOwner(id, watchInfo.ownerId)

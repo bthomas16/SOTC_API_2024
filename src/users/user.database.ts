@@ -1,7 +1,8 @@
-import { User, UnitUser, Users, ROLES } from "./user.interface";
+import { User, UnitUser, Users } from "./user.interface";
 import bcrypt from "bcryptjs"
 import {v4 as random} from "uuid"
 import fs from "fs"
+import { UserClass } from "./user.class";
 
 let users: Users = loadUsers() 
 
@@ -34,7 +35,8 @@ export const findOneByEmail_NotId = async (userId: string, email: string): Promi
 
 export const findOneByUsername_NotId = async (userId: string, username: string): Promise<UnitUser> => Object.values(users).find(user => user.id !== userId && user.username === username)
 
-export const create = async (userData: UnitUser): Promise<UnitUser | null> => {
+export const create = async (userData: UserClass): Promise<UnitUser | null> => {
+  console.log('creating', userData)
 
   let id = random()
 
@@ -48,18 +50,8 @@ export const create = async (userData: UnitUser): Promise<UnitUser | null> => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(userData.password, salt);
 
-  const role = userData.email === "brentthomas.c@gmail.com" ? ROLES.ADMIN : ROLES.USER;
 
-  const user : UnitUser = {
-    id : id,
-    username : userData.username,
-    email : userData.email,
-    password: hashedPassword,
-    role: role,
-    lastLogin: null,
-    isEnabled: true,
-    createdAt: Date.now()
-  };
+  const user : UnitUser = {id, ...userData, password: hashedPassword};
 
   users[id] = user;
 
@@ -71,7 +63,6 @@ export const create = async (userData: UnitUser): Promise<UnitUser | null> => {
 export const comparePassword  = async (email : string, supplied_password : string) : Promise<null | UnitUser> => {
 
     const user = await findOneByEmail(email);
-    console.log('do it for you', user, "supplied pword", supplied_password)
 
     const decryptPassword = await bcrypt.compare(supplied_password, user.password)
 
